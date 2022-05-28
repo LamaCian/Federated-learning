@@ -1,0 +1,7 @@
+from create_clientdata import create_clientdata
+def make_example_dataset(name):
+    if name == 'Leukemia':
+        client_ids = ['0', '1', '2']
+    example_dataset = client_data.create_tf_dataset_for_client(
+        client_data.client_ids[1])
+        preprocessed_example_dataset = preprocess(example_dataset)
