@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
     example_dataset = make_example_dataset(name)
 
-    state = transfer_learning(name, base_model, example_dataset, fed_alg, client_data)
+    state = transfer_learning(name, base_model,  fed_alg, client_data)
 
     # new_state = fine_tuning(name, base_model, example_dataset, state, client_data)
 
