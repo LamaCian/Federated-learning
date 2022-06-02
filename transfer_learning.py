@@ -10,7 +10,8 @@ import time
 import datetime
 from pathlib import Path
 import pathlib
-
+import csv
+from preprocess_func import preprocess
 
 # Load pre-trained model
 # create create_FL_model
@@ -27,11 +28,14 @@ def date_to_str(date):
     return date
 
 
-def transfer_learning(name, base_model, input_spec, fed_alg, client_data):
+def transfer_learning(name, base_model, fed_alg, client_data):
     if name == "Leukemia":
         input_shape = 32
         num_classes = 15
         client_ids = ["0", "1", "2"]
+    input_spec = preprocess(
+        client_data.create_tf_dataset_for_client(client_data.client_ids[0])
+    )
 
     def load_model(name, base_model):
 
@@ -99,7 +103,10 @@ def transfer_learning(name, base_model, input_spec, fed_alg, client_data):
             keras_model,
             input_spec=input_spec.element_spec,
             loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-            metrics=[tf.keras.metrics.SparseCategoricalAccuracy()],
+            metrics=[
+                tf.keras.metrics.SparseCategoricalAccuracy(),
+                tf.keras.metrics.SparseCategoricalCrossentropy(),
+            ],
         )
 
     # check again
@@ -177,6 +184,23 @@ def transfer_learning(name, base_model, input_spec, fed_alg, client_data):
         subfolder_path.mkdir(parents=True, exist_ok=True)
         title = "state"
         (subfolder_path / f"{title}.txt").write_text(str(state.model))
+        file_path = subfolder_path / "train_info.csv"
+        # with file_path.open("w", encoding="utf-8") as csvfile:
+        #     writer = csv.DictWriter(csvfile, fieldnames=[])
+        #     writer.writerows(training_info)
+
+        # with subfolder_path.open(mode="w+") as csvfile:
+        #     writer = csv.writer(csvfile)
+        #     header = [
+        #         "selected clients id",
+        #         "accuracy",
+        #         "loss",
+        #         "num_examples",
+        #         "num_batches",
+        #     ]
+        #     writer.writerow(header)
+
+        #     writer.writerows(training_info_csv)
     print("all cool")
 
     return state
