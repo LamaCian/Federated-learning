@@ -18,6 +18,12 @@ def create_clientdata(client_ids, train_set, labels):
         image = tf.image.convert_image_dtype(image, tf.float32)
         image = tf.image.resize(image, [32, 32])  #
 
+        # if one_hot == 1:
+        #     label_one_hot = tf.one_hot(label_int, depth=15)
+        #     return image, label_one_hot
+        # else:
+        #     return image, label_int
+
         return image, label_int
 
     def create_dataset(client_id):

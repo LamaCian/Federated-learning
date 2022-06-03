@@ -1,0 +1,3 @@
+sparse_categorical_accuracy,sparse_categorical_crossentropy,loss,num_examples,num_batches,time
+0.46230376,5.5080643,5.5080643,49050,2454,521.2856600284576
+0.46099883,5.1265984,5.1265984,29935,1498,795.65780210495

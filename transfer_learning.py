@@ -101,6 +101,20 @@ def transfer_learning(name, base_model, fed_alg, client_data):
         """
         keras_model = load_model(name, base_model)
         keras_model.save_weights("model_weights.hdf5")
+
+        # if one_hot == 0:
+        #     metrics = [
+        #         tf.keras.metrics.SparseCategoricalAccuracy(),
+        #         tf.keras.metrics.SparseCategoricalCrossentropy(),
+        #     ]
+        # else:
+        #     metrics = (
+        #         [
+        #             tf.keras.metrics.CategoricalAccuacy(),
+        #             tf.keras.metrics.CategoricalCrossentropy(),
+        #         ],
+        #     )
+
         return tff.learning.from_keras_model(
             keras_model,
             input_spec=input_spec.element_spec,
@@ -109,7 +123,6 @@ def transfer_learning(name, base_model, fed_alg, client_data):
                 tf.keras.metrics.SparseCategoricalAccuracy(),
                 tf.keras.metrics.SparseCategoricalCrossentropy(),
             ],
-            # metrics=tf.keras.metrics.SparseCategoricalAccuracy(),
         )
 
     # check again
