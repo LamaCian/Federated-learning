@@ -24,6 +24,7 @@ import pandas as pd
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
+    from distutils.util import strtobool
 
     parser.add_argument(
         "--name",
@@ -43,6 +44,13 @@ if __name__ == "__main__":
         type=str,
         choices=["FedAvg", "FedProx"],
     )
+    # parser.add_argument(
+    #     "--one_hot",
+    #     type=lambda x: bool(strtobool(x)),
+    #     choices=["1", "0"],
+    #     default="0",
+    #     help="use one-hot encoding",
+    # )
 
     args = parser.parse_args()
     name = args.name
@@ -55,7 +63,7 @@ if __name__ == "__main__":
 
     example_dataset = make_example_dataset(name)
 
-    state = transfer_learning(name, base_model,  fed_alg, client_data)
+    state = transfer_learning(name, base_model, fed_alg, client_data)
 
     # new_state = fine_tuning(name, base_model, example_dataset, state, client_data)
 
