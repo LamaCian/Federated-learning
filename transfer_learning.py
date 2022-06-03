@@ -1,4 +1,5 @@
 import random
+from requests import head
 import tensorflow as tf
 import tensorflow_federated as tff
 import keras
@@ -99,6 +100,7 @@ def transfer_learning(name, base_model, fed_alg, client_data):
             tff.learning.Model: _description_
         """
         keras_model = load_model(name, base_model)
+        keras_model.save_weights("model_weights.hdf5")
         return tff.learning.from_keras_model(
             keras_model,
             input_spec=input_spec.element_spec,
@@ -107,6 +109,7 @@ def transfer_learning(name, base_model, fed_alg, client_data):
                 tf.keras.metrics.SparseCategoricalAccuracy(),
                 tf.keras.metrics.SparseCategoricalCrossentropy(),
             ],
+            # metrics=tf.keras.metrics.SparseCategoricalAccuracy(),
         )
 
     # check again
@@ -124,15 +127,24 @@ def transfer_learning(name, base_model, fed_alg, client_data):
     #     ...
 
     state = transfer_learning_iterative_process.initialize()
-
+    date_and_time = datetime.datetime.now()
+    date_temp = date_and_time.strftime("%x")
+    date = date_to_str(date_temp)
     num_epochs = 2
     start = time.time()
     training_round = []
     training_metrics = []
     list_random_clients_ids = []
     training_info_dict = {}
+    all_info = []
 
     for epoch in range(num_epochs):
+
+        subfolder_path = Path("output/" f"{date,base_model,fed_alg}")
+        subfolder_path.mkdir(parents=True, exist_ok=True)
+        title = "state"
+        (subfolder_path / f"{title}.txt").write_text(str(state.model))
+        file_path = subfolder_path / "train_info.csv"
 
         random_clients_ids = random.sample(client_ids, k=2)
 
@@ -147,13 +159,13 @@ def transfer_learning(name, base_model, fed_alg, client_data):
         training_metrics.append(metrics)
 
         train_metrics = metrics["train"]
-        accuracy = train_metrics["sparse_categorical_accuracy"]
+        sparse_categorical_accuracy = train_metrics["sparse_categorical_accuracy"]
+        sparse_categorical_crossentropy = train_metrics[
+            "sparse_categorical_crossentropy"
+        ]
         loss = train_metrics["loss"]
         num_examples = train_metrics["num_examples"]
         num_batches = train_metrics["num_batches"]
-        date_and_time = datetime.datetime.now()
-        date_temp = date_and_time.strftime("%x")
-        date = date_to_str(date_temp)
 
         end = time.time()
 
@@ -167,24 +179,46 @@ def transfer_learning(name, base_model, fed_alg, client_data):
         training_info = pd.DataFrame(
             {
                 "selected clients id": list_random_clients_ids,
-                "accuracy": accuracy,
                 "loss": loss,
                 "num_examples": num_examples,
                 "num_batches": num_batches,
             }
         )
+        all_info.append(
+            [
+                sparse_categorical_accuracy,
+                sparse_categorical_crossentropy,
+                loss,
+                num_examples,
+                num_batches,
+                total_time,
+            ]
+        )
+
+        # print(training_info)
 
         training_info_csv = pd.DataFrame.to_csv(training_info)
-        # subfolder_path = Path(
-        #     "output/{}_{}".format(
-        #         training_round[epoch], date[epoch]
-        #     )  ##f'{title_base_model} -->
-        # ).resolve()
-        subfolder_path = Path("output/" f"{date,base_model}")
-        subfolder_path.mkdir(parents=True, exist_ok=True)
-        title = "state"
-        (subfolder_path / f"{title}.txt").write_text(str(state.model))
-        file_path = subfolder_path / "train_info.csv"
+
+        header = [
+            "sparse_categorical_accuracy",
+            "sparse_categorical_crossentropy",
+            "loss",
+            "num_examples",
+            "num_batches",
+            "time",
+        ]
+
+        with file_path.open(mode="w") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(header)
+            writer.writerows(all_info)
+
+        # subfolder_path = Path("output/" f"{date,base_model}")
+        # subfolder_path.mkdir(parents=True, exist_ok=True)
+        # title = "state"
+        # (subfolder_path / f"{title}.txt").write_text(str(state.model))
+        # file_path = subfolder_path / "train_info.csv"
+
         # with file_path.open("w", encoding="utf-8") as csvfile:
         #     writer = csv.DictWriter(csvfile, fieldnames=[])
         #     writer.writerows(training_info)
@@ -213,4 +247,3 @@ def transfer_learning(name, base_model, fed_alg, client_data):
 # write training_info
 # more metrics
 # create sub_fold_before training
-# change input spec
