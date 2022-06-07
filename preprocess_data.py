@@ -40,10 +40,12 @@ def turn_data_to_fed(dataset_name, train_set):
 
     # elif dataset_name == "Covid":
     #     # add labels for covid
+    print('-------- creating ClientData Object --------')
 
     client_data = create_clientdata(client_ids, train_set, labels)
     print("Structure of client data: ", client_data.element_type_structure)
 
+    print('-------- turn data into fed data --------')
     fed_data = make_federated_data(client_data, client_ids)
 
     return fed_data, client_data
