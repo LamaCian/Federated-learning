@@ -14,13 +14,6 @@ import pathlib
 import csv
 from preprocess_func import preprocess
 
-# Load pre-trained model
-# create create_FL_model
-# depending on optimizer perform training
-# initialize state
-# return state, metrics
-# save state, metrics in df -> csv
-
 
 def date_to_str(date):
     for separator in date:
@@ -89,6 +82,8 @@ def transfer_learning(name, base_model, fed_alg, client_data):
         outputs = tf.keras.layers.Dense(num_classes)(x)
         model = tf.keras.Model(inputs, outputs)
 
+        print("-------- loading base_model --------")
+
         return model
 
     # change input_spec -> use client_data
@@ -153,7 +148,7 @@ def transfer_learning(name, base_model, fed_alg, client_data):
 
     for epoch in range(num_epochs):
 
-        subfolder_path = Path("output/" f"{date,base_model,fed_alg}")
+        subfolder_path = Path("output/" f"{date}_{base_model}_{fed_alg}")
         subfolder_path.mkdir(parents=True, exist_ok=True)
         title = "state"
         (subfolder_path / f"{title}.txt").write_text(str(state.model))
@@ -162,6 +157,7 @@ def transfer_learning(name, base_model, fed_alg, client_data):
         random_clients_ids = random.sample(client_ids, k=2)
 
         federated_train_data = make_federated_data(client_data, random_clients_ids)
+        print("-------- training starts --------")
         state, metrics = transfer_learning_iterative_process.next(
             state, federated_train_data
         )
@@ -210,7 +206,7 @@ def transfer_learning(name, base_model, fed_alg, client_data):
 
         # print(training_info)
 
-        training_info_csv = pd.DataFrame.to_csv(training_info)
+        training_info.to_csv(file_path)
 
         header = [
             "sparse_categorical_accuracy",
@@ -221,10 +217,10 @@ def transfer_learning(name, base_model, fed_alg, client_data):
             "time",
         ]
 
-        with file_path.open(mode="w") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(header)
-            writer.writerows(all_info)
+        # with file_path.open(mode="w") as csvfile:
+        #     writer = csv.writer(csvfile)
+        #     writer.writerow(header)
+        #     writer.writerows(all_info)
 
         # subfolder_path = Path("output/" f"{date,base_model}")
         # subfolder_path.mkdir(parents=True, exist_ok=True)
@@ -251,12 +247,3 @@ def transfer_learning(name, base_model, fed_alg, client_data):
     print("all cool")
 
     return state
-
-
-# save weights through keras model
-# create sub_fold before training
-# f'{title_base_model}
-# verify that I can load weights
-# write training_info
-# more metrics
-# create sub_fold_before training

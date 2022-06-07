@@ -14,12 +14,6 @@ from transfer_learning import transfer_learning
 import csv
 import pandas as pd
 
-# data = load("Leukemia")
-
-# train_set, test_set = split_data("Leukemia", make_csv=True)
-
-# fed_train_set = turn_data_to_fed("Leukemia")
-
 
 if __name__ == "__main__":
 
@@ -59,9 +53,13 @@ if __name__ == "__main__":
 
     train, test = load(name)
 
+    print("-------- preprocessing --------")
+
     fed_train_set, client_data = turn_data_to_fed(name, train)
 
     example_dataset = make_example_dataset(name)
+
+    print("-------- transfer learning --------")
 
     state = transfer_learning(name, base_model, fed_alg, client_data)
 
