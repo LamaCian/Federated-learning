@@ -20,6 +20,9 @@ def load(name):
         # file_path = path('covid')
     # return file_path
     # eturn file_path
+
+    print("-------- loaded datasets --------")
+
     return train_data, test_data
 
 

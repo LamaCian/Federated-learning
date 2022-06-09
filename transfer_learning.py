@@ -32,7 +32,8 @@ def transfer_learning(name, base_model, fed_alg, client_data, num_rounds):
     )
 
     def load_model(name, base_model):
-        print("loading base_model")
+
+        print("-------- loading base_model --------")
 
         if name == "Leukemia":
             input_shape = 32
@@ -126,7 +127,7 @@ def transfer_learning(name, base_model, fed_alg, client_data, num_rounds):
             tff.learning.build_federated_averaging_process(
                 create_FL_model,
                 client_optimizer_fn=lambda: tf.keras.optimizers.SGD(
-                    learning_rate=0.02
+                    learning_rate=0.2
                 ),  # 0.2
                 server_optimizer_fn=lambda: tf.keras.optimizers.SGD(learning_rate=1.0),
             )
@@ -156,8 +157,6 @@ def transfer_learning(name, base_model, fed_alg, client_data, num_rounds):
 
         start_train = time.time()
 
-        print("training")
-
         subfolder_path = Path("output/" f"{date}_{base_model}_{fed_alg}")
         subfolder_path.mkdir(parents=True, exist_ok=True)
         title = "state"
@@ -167,6 +166,9 @@ def transfer_learning(name, base_model, fed_alg, client_data, num_rounds):
         random_clients_ids = random.sample(client_ids, k=2)
 
         federated_train_data = make_federated_data(client_data, random_clients_ids)
+
+        print("-------- training starts --------")
+
         state, metrics = transfer_learning_iterative_process.next(
             state, federated_train_data
         )
@@ -222,7 +224,7 @@ def transfer_learning(name, base_model, fed_alg, client_data, num_rounds):
                 "sparse_categorical_accuracy": list_sparse_categorical_accuracy,
                 "sparse_categorical_crossentropy": list_sparse_categorical_crossentropy,
                 "loss": list_loss,
-                "num_examples": list_num_examples,git 
+                "num_examples": list_num_examples,
                 "num_batches": list_num_batches,
             }
         )

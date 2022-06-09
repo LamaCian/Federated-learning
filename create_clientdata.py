@@ -24,9 +24,13 @@ def create_clientdata(client_ids, train_set, labels, base_model):
         # else:
         #     return image, label_int
         if base_model == "VGG16":
+            print("-------- preprocessing image for base_model VGG16 --------")
+
             image = tf.keras.applications.vgg16.preprocess_input(image)
 
         elif base_model == "ResNet":
+            print("-------- preprocessing image for base_model  ResNet --------")
+
             image = tf.keras.applications.resnet.preprocess_input(image)
 
         return image, label_int
