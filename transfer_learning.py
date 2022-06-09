@@ -222,7 +222,7 @@ def transfer_learning(name, base_model, fed_alg, client_data, num_rounds):
                 "sparse_categorical_accuracy": list_sparse_categorical_accuracy,
                 "sparse_categorical_crossentropy": list_sparse_categorical_crossentropy,
                 "loss": list_loss,
-                "num_examples": list_num_examples,
+                "num_examples": list_num_examples,git 
                 "num_batches": list_num_batches,
             }
         )
