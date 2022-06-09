@@ -4,7 +4,7 @@ import pandas as pd
 import os
 
 
-def create_clientdata(client_ids, train_set, labels):
+def create_clientdata(client_ids, train_set, labels, base_model):
     labels_tf = tf.convert_to_tensor(labels)
 
     def parse_image(filename):
@@ -23,6 +23,11 @@ def create_clientdata(client_ids, train_set, labels):
         #     return image, label_one_hot
         # else:
         #     return image, label_int
+        if base_model == "VGG16":
+            image = tf.keras.applications.vgg16.preprocess_input(image)
+
+        elif base_model == "ResNet":
+            image = tf.keras.applications.resnet.preprocess_input(image)
 
         return image, label_int
 

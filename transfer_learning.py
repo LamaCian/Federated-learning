@@ -14,13 +14,6 @@ import pathlib
 import csv
 from preprocess_func import preprocess
 
-# Load pre-trained model
-# create create_FL_model
-# depending on optimizer perform training
-# initialize state
-# return state, metrics
-# save state, metrics in df -> csv
-
 
 def date_to_str(date):
     for separator in date:
@@ -29,7 +22,7 @@ def date_to_str(date):
     return date
 
 
-def transfer_learning(name, base_model, fed_alg, client_data):
+def transfer_learning(name, base_model, fed_alg, client_data, num_rounds):
     if name == "Leukemia":
         input_shape = 32
         num_classes = 15
@@ -39,6 +32,7 @@ def transfer_learning(name, base_model, fed_alg, client_data):
     )
 
     def load_model(name, base_model):
+        print("loading base_model")
 
         if name == "Leukemia":
             input_shape = 32
@@ -86,7 +80,7 @@ def transfer_learning(name, base_model, fed_alg, client_data):
 
         x = tf.keras.layers.GlobalAveragePooling2D()(x)
 
-        outputs = tf.keras.layers.Dense(num_classes)(x)
+        outputs = tf.keras.layers.Dense(num_classes, activation="softmax")(x)
         model = tf.keras.Model(inputs, outputs)
 
         return model
@@ -131,7 +125,9 @@ def transfer_learning(name, base_model, fed_alg, client_data):
         transfer_learning_iterative_process = (
             tff.learning.build_federated_averaging_process(
                 create_FL_model,
-                client_optimizer_fn=lambda: tf.keras.optimizers.SGD(learning_rate=0.02),
+                client_optimizer_fn=lambda: tf.keras.optimizers.SGD(
+                    learning_rate=0.02
+                ),  # 0.2
                 server_optimizer_fn=lambda: tf.keras.optimizers.SGD(learning_rate=1.0),
             )
         )
@@ -143,17 +139,26 @@ def transfer_learning(name, base_model, fed_alg, client_data):
     date_and_time = datetime.datetime.now()
     date_temp = date_and_time.strftime("%x")
     date = date_to_str(date_temp)
-    num_epochs = 2
+    num_epochs = num_rounds
     start = time.time()
     training_round = []
     training_metrics = []
     list_random_clients_ids = []
     training_info_dict = {}
-    all_info = []
+    list_info = []
+    list_loss = []
+    list_sparse_categorical_accuracy = []
+    list_sparse_categorical_crossentropy = []
+    list_num_examples = []
+    list_num_batches = []
 
     for epoch in range(num_epochs):
 
-        subfolder_path = Path("output/" f"{date,base_model,fed_alg}")
+        start_train = time.time()
+
+        print("training")
+
+        subfolder_path = Path("output/" f"{date}_{base_model}_{fed_alg}")
         subfolder_path.mkdir(parents=True, exist_ok=True)
         title = "state"
         (subfolder_path / f"{title}.txt").write_text(str(state.model))
@@ -166,38 +171,62 @@ def transfer_learning(name, base_model, fed_alg, client_data):
             state, federated_train_data
         )
 
+        train_metrics = metrics["train"]
+
         list_random_clients_ids.append(random_clients_ids)
         training_info = {}
         training_round.append(epoch)
         training_metrics.append(metrics)
 
+        loss = train_metrics["loss"]
+        num_examples = train_metrics["num_examples"]
+        num_batches = train_metrics["num_batches"]
         train_metrics = metrics["train"]
         sparse_categorical_accuracy = train_metrics["sparse_categorical_accuracy"]
         sparse_categorical_crossentropy = train_metrics[
             "sparse_categorical_crossentropy"
         ]
-        loss = train_metrics["loss"]
-        num_examples = train_metrics["num_examples"]
-        num_batches = train_metrics["num_batches"]
+
+        list_sparse_categorical_accuracy.append(
+            train_metrics["sparse_categorical_accuracy"]
+        )
+        list_sparse_categorical_crossentropy.append(
+            train_metrics["sparse_categorical_crossentropy"]
+        )
+        list_loss.append(train_metrics["loss"])
+        list_num_examples.append(train_metrics["num_examples"])
+        list_num_batches.append(train_metrics["num_batches"])
 
         end = time.time()
 
+        train_time = end - start_train
+
         total_time = end - start
 
-        if (total_time / 60) > 60:
-            print("Time spent on training: ~ {:.2f} in hours".format(total_time / 3600))
+        if (train_time / 60) > 60:
+            print("Time spent on training: ~ {:.2f} in hours".format(train_time / 3600))
         else:
-            print("Time spent on training: {:.2f} in minutes".format(total_time / 60))
+            print("Time spent on training: {:.2f} in minutes".format(train_time / 60))
+
+        print(
+            "loss: {}, sparse_accuracy: {}, sparse_categorical_crossentropy : {}".format(
+                train_metrics["loss"],
+                train_metrics["sparse_categorical_accuracy"],
+                train_metrics["sparse_categorical_crossentropy"],
+            )
+        )
 
         training_info = pd.DataFrame(
             {
                 "selected clients id": list_random_clients_ids,
-                "loss": loss,
-                "num_examples": num_examples,
-                "num_batches": num_batches,
+                "sparse_categorical_accuracy": list_sparse_categorical_accuracy,
+                "sparse_categorical_crossentropy": list_sparse_categorical_crossentropy,
+                "loss": list_loss,
+                "num_examples": list_num_examples,
+                "num_batches": list_num_batches,
             }
         )
-        all_info.append(
+        list_info.append(
             [
                 sparse_categorical_accuracy,
                 sparse_categorical_crossentropy,
@@ -208,55 +237,10 @@ def transfer_learning(name, base_model, fed_alg, client_data):
             ]
         )
 
-        # print(training_info)
+        training_info.to_csv(file_path, index=False)
 
-        training_info_csv = pd.DataFrame.to_csv(training_info)
+    print("Total time spent on training: {:.2f} in min".format(total_time / 60))
 
-        header = [
-            "sparse_categorical_accuracy",
-            "sparse_categorical_crossentropy",
-            "loss",
-            "num_examples",
-            "num_batches",
-            "time",
-        ]
-
-        with file_path.open(mode="w") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(header)
-            writer.writerows(all_info)
-
-        # subfolder_path = Path("output/" f"{date,base_model}")
-        # subfolder_path.mkdir(parents=True, exist_ok=True)
-        # title = "state"
-        # (subfolder_path / f"{title}.txt").write_text(str(state.model))
-        # file_path = subfolder_path / "train_info.csv"
-
-        # with file_path.open("w", encoding="utf-8") as csvfile:
-        #     writer = csv.DictWriter(csvfile, fieldnames=[])
-        #     writer.writerows(training_info)
-
-        # with subfolder_path.open(mode="w+") as csvfile:
-        #     writer = csv.writer(csvfile)
-        #     header = [
-        #         "selected clients id",
-        #         "accuracy",
-        #         "loss",
-        #         "num_examples",
-        #         "num_batches",
-        #     ]
-        #     writer.writerow(header)
-
-        #     writer.writerows(training_info_csv)
-    print("all cool")
+    # print("all cool")
 
     return state
-
-
-# save weights through keras model
-# create sub_fold before training
-# f'{title_base_model}
-# verify that I can load weights
-# write training_info
-# more metrics
-# create sub_fold_before training

@@ -6,7 +6,7 @@ from create_clientdata import create_clientdata
 from make_fed_data import make_federated_data
 
 
-def turn_data_to_fed(dataset_name, train_set):
+def turn_data_to_fed(dataset_name, train_set, base_model):
 
     """Preprocess the input data and turns it into format compatible for federated setting
 
@@ -41,7 +41,7 @@ def turn_data_to_fed(dataset_name, train_set):
     # elif dataset_name == "Covid":
     #     # add labels for covid
 
-    client_data = create_clientdata(client_ids, train_set, labels)
+    client_data = create_clientdata(client_ids, train_set, labels, base_model)
     print("Structure of client data: ", client_data.element_type_structure)
 
     fed_data = make_federated_data(client_data, client_ids)

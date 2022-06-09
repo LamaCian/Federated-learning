@@ -1,8 +1,6 @@
 import argparse
 import pandas as pd
 
-# {"path": "/home", "category": "BLA", "image": numpy.ndary"}
-
 
 def load(name):
 

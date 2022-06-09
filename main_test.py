@@ -44,6 +44,11 @@ if __name__ == "__main__":
         type=str,
         choices=["FedAvg", "FedProx"],
     )
+    parser.add_argument(
+        "--num_rounds",
+        help="Number of training rounds",
+        type=int,
+    )
     # parser.add_argument(
     #     "--one_hot",
     #     type=lambda x: bool(strtobool(x)),
@@ -56,32 +61,21 @@ if __name__ == "__main__":
     name = args.name
     base_model = args.base_model
     fed_alg = args.fed_alg
+    num_rounds = args.num_rounds
 
     train, test = load(name)
 
-    fed_train_set, client_data = turn_data_to_fed(name, train)
+    fed_train_set, client_data = turn_data_to_fed(name, train, base_model)
 
-    example_dataset = make_example_dataset(name)
+    # example_dataset = make_example_dataset(name)
 
-    state = transfer_learning(name, base_model, fed_alg, client_data)
+    state = transfer_learning(name, base_model, fed_alg, client_data, num_rounds)
 
     # new_state = fine_tuning(name, base_model, example_dataset, state, client_data)
 
-    # create table of loss, metrics..
-    # save weights to specific folder
-    # output_dir --> save weights there
-    # for testing load everything from output_dir
-    # save start of training ->
-    # output_dir ->
 
-    # making directory
-    # import os
-
-    # parent_dir = os.getcwd()
-    # directory = "output_dir"
-    # path = os.path.join(parent_dir, directory)
-    # output_dir = os.mkdir(path)
-    # for rounds in NUM_RUNDS:
-    #     name_of_sub_directory = str(datetime) + "_" + str(model)...
-    #     path_of_subdir = os.path.join(output_dir, sub_directory)
-    #     sub_dir = os.mkdir(path_of_subdir)
+# print metrics
+# more number or round
+# look at metrics
+# then fine tuning
+# number of rounds as argparse
