@@ -16,7 +16,9 @@ def create_clientdata(client_ids, train_set, labels):
         image = tf.io.read_file(filename)
         image = tf.io.decode_jpeg(image, channels=3)
         image = tf.image.convert_image_dtype(image, tf.float32)
-        image = tf.image.resize(image, [32, 32])  #
+        image = tf.image.resize(image, [32, 32])
+        image = tf.keras.applications.resnet50.preprocess_input(image)
+        #
 
         # if one_hot == 1:
         #     label_one_hot = tf.one_hot(label_int, depth=15)

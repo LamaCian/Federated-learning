@@ -2,13 +2,14 @@ from email.mime import base
 import tensorflow_federated as tff
 import tensorflow
 from load_data import load
-from create_clientdata import *
+from create_clientdata import create_clientdata
 from preprocess_data import turn_data_to_fed
 from split_data import *
 import argparse
 from pathlib import Path
 from example_dataset import make_example_dataset
 from transfer_learning import transfer_learning
+from distutils.util import strtobool
 
 # from fine_tuning import fine_tuning
 import csv
@@ -38,6 +39,14 @@ if __name__ == "__main__":
         type=str,
         choices=["FedAvg", "FedProx"],
     )
+
+    parser.add_argument(
+        "--learning_manner",
+        help=" ",
+        type=str,
+        choices=["Federated", "Centralized"],
+    )
+
     # parser.add_argument(
     #     "--one_hot",
     #     type=lambda x: bool(strtobool(x)),
@@ -50,6 +59,7 @@ if __name__ == "__main__":
     name = args.name
     base_model = args.base_model
     fed_alg = args.fed_alg
+    learning_manner = args.learning_manner
 
     train, test = load(name)
 
@@ -57,11 +67,9 @@ if __name__ == "__main__":
 
     fed_train_set, client_data = turn_data_to_fed(name, train)
 
-    example_dataset = make_example_dataset(name)
-
     print("-------- transfer learning --------")
 
-    state = transfer_learning(name, base_model, fed_alg, client_data)
+    state = transfer_learning(name, base_model, fed_alg, client_data, learning_manner)
 
     # new_state = fine_tuning(name, base_model, example_dataset, state, client_data)
 
