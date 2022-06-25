@@ -1,0 +1,3 @@
+,selected clients id,sparse_categorical_accuracy,loss,num_examples,num_batches
+0,"['16', '0']",0.17314723134040833,13.32728099822998,15045,753
+1,"['12', '15']",0.3677932322025299,10.189972877502441,7545,378
