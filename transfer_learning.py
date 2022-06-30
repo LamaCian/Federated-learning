@@ -123,7 +123,7 @@ def transfer_learning(name, base_model, fed_alg, client_data, learning_manner):
 
         x = tf.keras.layers.GlobalAveragePooling2D()(x)
 
-        outputs = tf.keras.layers.Dense(num_classes, activation="softmax")(x)
+        outputs = tf.keras.layers.Dense(num_classes)(x)
         model = tf.keras.Model(inputs, outputs)
 
         print("-------- loading base_model --------")
@@ -169,9 +169,7 @@ def transfer_learning(name, base_model, fed_alg, client_data, learning_manner):
         transfer_learning_iterative_process = (
             tff.learning.build_federated_averaging_process(
                 create_FL_model,
-                client_optimizer_fn=lambda: tf.keras.optimizers.SGD(
-                    learning_rate=0.2
-                ),  # 0.2
+                client_optimizer_fn=lambda: tf.keras.optimizers.SGD(learning_rate=0.02),
                 server_optimizer_fn=lambda: tf.keras.optimizers.SGD(learning_rate=1.0),
             )
         )
@@ -183,7 +181,7 @@ def transfer_learning(name, base_model, fed_alg, client_data, learning_manner):
     date_and_time = datetime.datetime.now()
     date_temp = date_and_time.strftime("%x")
     date = date_to_str(date_temp)
-    num_epochs = num_rounds
+    num_epochs = 2
     start = time.time()
     training_round = []
     training_metrics = []
@@ -261,16 +259,11 @@ def transfer_learning(name, base_model, fed_alg, client_data, learning_manner):
             state, federated_train_data
         )
 
-        train_metrics = metrics["train"]
-
         list_random_clients_ids.append(random_clients_ids)
         training_info = {}
         training_round.append(epoch)
         training_metrics.append(metrics)
 
-        loss = train_metrics["loss"]
-        num_examples = train_metrics["num_examples"]
-        num_batches = train_metrics["num_batches"]
         train_metrics = metrics["train"]
         sparse_categorical_accuracy.append(train_metrics["sparse_categorical_accuracy"])
 
@@ -280,22 +273,12 @@ def transfer_learning(name, base_model, fed_alg, client_data, learning_manner):
 
         end = time.time()
 
-        train_time = end - start_train
-
         total_time = end - start
 
-        if (train_time / 60) > 60:
-            print("Time spent on training: ~ {:.2f} in hours".format(train_time / 3600))
+        if (total_time / 60) > 60:
+            print("Time spent on training: ~ {:.2f} in hours".format(total_time / 3600))
         else:
-            print("Time spent on training: {:.2f} in minutes".format(train_time / 60))
-
-        print(
-            "loss: {}, sparse_accuracy: {}, sparse_categorical_crossentropy : {}".format(
-                train_metrics["loss"],
-                train_metrics["sparse_categorical_accuracy"],
-                train_metrics["sparse_categorical_crossentropy"],
-            )
-        )
+            print("Time spent on training: {:.2f} in minutes".format(total_time / 60))
 
         training_info = pd.DataFrame(
             {
@@ -306,7 +289,7 @@ def transfer_learning(name, base_model, fed_alg, client_data, learning_manner):
                 "num_batches": num_batches,
             }
         )
-        list_info.append(
+        all_info.append(
             [
                 sparse_categorical_accuracy,
                 loss,
@@ -316,7 +299,7 @@ def transfer_learning(name, base_model, fed_alg, client_data, learning_manner):
             ]
         )
 
-        training_info.to_csv(file_path, index=False)
+        # print(training_info)
 
         training_info.to_csv(file_path)
 
@@ -332,11 +315,12 @@ def transfer_learning(name, base_model, fed_alg, client_data, learning_manner):
         # VALIDATION STEP
         #     client_data_valid
 
+        # eval_metric = federated_eval(state.model, client_data_valid)
+        # print(eval_metric)
 
-
-        model_weights = transfer_learning_iterative_process.get_model_weights(state)
-        eval_metric = federated_eval(model_weights, [fed_valid_data])
-        print(eval_metric)
+        # model_weights = transfer_learning_iterative_process.get_model_weights(state)
+        # eval_metric = federated_eval(model_weights, [fed_valid_data])
+        # print(eval_metric)
 
     print("all cool")
 
