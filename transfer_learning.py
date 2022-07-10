@@ -13,6 +13,7 @@ from pathlib import Path
 import pathlib
 import csv
 from preprocess_func import preprocess
+from preprocess_data import make_federated_data
 
 
 def date_to_str(date):
@@ -22,23 +23,64 @@ def date_to_str(date):
     return date
 
 
-def transfer_learning(name, base_model, fed_alg, client_data, num_rounds):
-    if name == "Leukemia":
-        input_shape = 32
-        num_classes = 15
-        client_ids = ["0", "1", "2"]
+def transfer_learning(name, base_model, fed_alg, client_data, learning_manner):
+    input_shape = 32
+
     input_spec = preprocess(
         client_data.create_tf_dataset_for_client(client_data.client_ids[0])
     )
+    if name == "Leukemia":
+        num_classes = 15
+
+        client_ids = ["0", "1", "2"]
+
+    elif name == "Covid":
+        client_ids = [
+            "15",
+            "19",
+            "14",
+            "7",
+            "12",
+            "16",
+            "9",
+            "10",
+            "8",
+            "0",
+            "6",
+            "13",
+            "4",
+            "3",
+            "18",
+        ]
+        num_classes = 3
 
     def load_model(name, base_model):
 
-        print("-------- loading base_model --------")
+        input_shape = 32
 
         if name == "Leukemia":
-            input_shape = 32
             num_classes = 15
+
             client_ids = ["0", "1", "2"]
+        elif name == "Covid":
+            client_ids = [
+                "15",
+                "19",
+                "14",
+                "7",
+                "12",
+                "16",
+                "9",
+                "10",
+                "8",
+                "0",
+                "6",
+                "13",
+                "4",
+                "3",
+                "18",
+            ]
+            num_classes = 3
 
         """Loads pre-trained model
 
@@ -81,8 +123,10 @@ def transfer_learning(name, base_model, fed_alg, client_data, num_rounds):
 
         x = tf.keras.layers.GlobalAveragePooling2D()(x)
 
-        outputs = tf.keras.layers.Dense(num_classes, activation="softmax")(x)
+        outputs = tf.keras.layers.Dense(num_classes)(x)
         model = tf.keras.Model(inputs, outputs)
+
+        print("-------- loading base_model --------")
 
         return model
 
@@ -116,7 +160,6 @@ def transfer_learning(name, base_model, fed_alg, client_data, num_rounds):
             loss=tf.keras.losses.SparseCategoricalCrossentropy(),
             metrics=[
                 tf.keras.metrics.SparseCategoricalAccuracy(),
-                tf.keras.metrics.SparseCategoricalCrossentropy(),
             ],
         )
 
@@ -126,9 +169,7 @@ def transfer_learning(name, base_model, fed_alg, client_data, num_rounds):
         transfer_learning_iterative_process = (
             tff.learning.build_federated_averaging_process(
                 create_FL_model,
-                client_optimizer_fn=lambda: tf.keras.optimizers.SGD(
-                    learning_rate=0.2
-                ),  # 0.2
+                client_optimizer_fn=lambda: tf.keras.optimizers.SGD(learning_rate=0.02),
                 server_optimizer_fn=lambda: tf.keras.optimizers.SGD(learning_rate=1.0),
             )
         )
@@ -140,98 +181,117 @@ def transfer_learning(name, base_model, fed_alg, client_data, num_rounds):
     date_and_time = datetime.datetime.now()
     date_temp = date_and_time.strftime("%x")
     date = date_to_str(date_temp)
-    num_epochs = num_rounds
+    num_epochs = 2
     start = time.time()
     training_round = []
     training_metrics = []
     list_random_clients_ids = []
     training_info_dict = {}
-    list_info = []
-    list_loss = []
-    list_sparse_categorical_accuracy = []
-    list_sparse_categorical_crossentropy = []
-    list_num_examples = []
-    list_num_batches = []
+    all_info = []
+    loss = []
+    sparse_categorical_accuracy = []
+    sparse_categorical_crossentropy = []
+    num_examples = []
+    num_batches = []
+
+    client_data_train, client_data_valid = client_data.train_test_client_split(
+        client_data, num_test_clients=1, seed=12345
+    )
+
+    print(client_data_valid.client_ids[0])
+    client_data_train_prepr = make_federated_data(
+        client_data_train, client_data_train.client_ids
+    )
+    train_dataset = client_data.create_tf_dataset_from_all_clients()
+
+    # train_dataset = client_data_train.create_tf_dataset_from_all_clients(seed=7)
+    # valid_dataset = client_data_valid.create_tf_dataset_from_all_clients(seed=7)
+
+    # print(valid_dataset.element_spec)
+
+    # if learning_manner == "Centralized":
+    #     train_dataset = client_data_train.create_tf_dataset_from_all_clients(seed=7)
+    #     valid_dataset = client_data_valid.create_tf_dataset_from_all_clients(seed=7)
+    #     for epoch in range(num_epochs):
+    #         state, metrics = transfer_learning_iterative_process.next(
+    #             state, train_dataset
+    #         )
+    #         train_metrics = metrics["train"]
+    #         print(
+    #             "\tTrain: loss={l:.3f}, accuracy={a:.3f}".format(
+    #                 l=train_metrics["loss"],
+    #                 a=train_metrics["sparse_categorical_accuracy"],
+    #             )
+    #         )
+
+    # Centralized manner
+    # train_dataset = client_data_train.create_tf_dataset_from_all_clients()
+    # valid_dataset = client_data_valid.create_tf_dataset_from_all_clients()
+    # histroy = model.fit
+
+    # else:
+    federated_eval = tff.learning.build_federated_evaluation(create_FL_model)
 
     for epoch in range(num_epochs):
-
-        start_train = time.time()
 
         subfolder_path = Path("output/" f"{date}_{base_model}_{fed_alg}")
         subfolder_path.mkdir(parents=True, exist_ok=True)
         title = "state"
-        (subfolder_path / f"{title}.txt").write_text(str(state.model))
+        # (subfolder_path / f"{title}.txt").write_text(str(state.model))
         file_path = subfolder_path / "train_info.csv"
 
         random_clients_ids = random.sample(client_ids, k=2)
 
-        federated_train_data = make_federated_data(client_data, random_clients_ids)
+        federated_train_data = make_federated_data(
+            client_data_train, random_clients_ids
+        )
+        # fed_valid_data = make_federated_data(
+        #     client_data_valid, client_data_valid.client_ids
+        # )
 
+        fed_valid_data = preprocess(
+            client_data_valid.create_tf_dataset_for_client(
+                client_data_valid.client_ids[0]
+            )
+        )
         print("-------- training starts --------")
-
         state, metrics = transfer_learning_iterative_process.next(
             state, federated_train_data
         )
-
-        train_metrics = metrics["train"]
 
         list_random_clients_ids.append(random_clients_ids)
         training_info = {}
         training_round.append(epoch)
         training_metrics.append(metrics)
 
-        loss = train_metrics["loss"]
-        num_examples = train_metrics["num_examples"]
-        num_batches = train_metrics["num_batches"]
         train_metrics = metrics["train"]
-        sparse_categorical_accuracy = train_metrics["sparse_categorical_accuracy"]
-        sparse_categorical_crossentropy = train_metrics[
-            "sparse_categorical_crossentropy"
-        ]
+        sparse_categorical_accuracy.append(train_metrics["sparse_categorical_accuracy"])
 
-        list_sparse_categorical_accuracy.append(
-            train_metrics["sparse_categorical_accuracy"]
-        )
-        list_sparse_categorical_crossentropy.append(
-            train_metrics["sparse_categorical_crossentropy"]
-        )
-        list_loss.append(train_metrics["loss"])
-        list_num_examples.append(train_metrics["num_examples"])
-        list_num_batches.append(train_metrics["num_batches"])
+        loss.append(train_metrics["loss"])
+        num_examples.append(train_metrics["num_examples"])
+        num_batches.append(train_metrics["num_batches"])
 
         end = time.time()
 
-        train_time = end - start_train
-
         total_time = end - start
 
-        if (train_time / 60) > 60:
-            print("Time spent on training: ~ {:.2f} in hours".format(train_time / 3600))
+        if (total_time / 60) > 60:
+            print("Time spent on training: ~ {:.2f} in hours".format(total_time / 3600))
         else:
-            print("Time spent on training: {:.2f} in minutes".format(train_time / 60))
-
-        print(
-            "loss: {}, sparse_accuracy: {}, sparse_categorical_crossentropy : {}".format(
-                train_metrics["loss"],
-                train_metrics["sparse_categorical_accuracy"],
-                train_metrics["sparse_categorical_crossentropy"],
-            )
-        )
+            print("Time spent on training: {:.2f} in minutes".format(total_time / 60))
 
         training_info = pd.DataFrame(
             {
                 "selected clients id": list_random_clients_ids,
-                "sparse_categorical_accuracy": list_sparse_categorical_accuracy,
-                "sparse_categorical_crossentropy": list_sparse_categorical_crossentropy,
-                "loss": list_loss,
-                "num_examples": list_num_examples,
-                "num_batches": list_num_batches,
+                "sparse_categorical_accuracy": sparse_categorical_accuracy,
+                "loss": loss,
+                "num_examples": num_examples,
+                "num_batches": num_batches,
             }
         )
-        list_info.append(
+        all_info.append(
             [
                 sparse_categorical_accuracy,
-                sparse_categorical_crossentropy,
                 loss,
                 num_examples,
                 num_batches,
@@ -239,10 +299,29 @@ def transfer_learning(name, base_model, fed_alg, client_data, num_rounds):
             ]
         )
 
-        training_info.to_csv(file_path, index=False)
+        # print(training_info)
 
-    print("Total time spent on training: {:.2f} in min".format(total_time / 60))
+        training_info.to_csv(file_path)
 
-    # print("all cool")
+        header = [
+            "sparse_categorical_accuracy",
+            "sparse_categorical_crossentropy",
+            "loss",
+            "num_examples",
+            "num_batches",
+            "time",
+        ]
+
+        # VALIDATION STEP
+        #     client_data_valid
+
+        # eval_metric = federated_eval(state.model, client_data_valid)
+        # print(eval_metric)
+
+        # model_weights = transfer_learning_iterative_process.get_model_weights(state)
+        # eval_metric = federated_eval(model_weights, [fed_valid_data])
+        # print(eval_metric)
+
+    print("all cool")
 
     return state

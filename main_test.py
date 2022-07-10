@@ -2,23 +2,18 @@ from email.mime import base
 import tensorflow_federated as tff
 import tensorflow
 from load_data import load
-from create_clientdata import *
+from create_clientdata import create_clientdata
 from preprocess_data import turn_data_to_fed
 from split_data import *
 import argparse
 from pathlib import Path
 from example_dataset import make_example_dataset
 from transfer_learning import transfer_learning
+from distutils.util import strtobool
 
 # from fine_tuning import fine_tuning
 import csv
 import pandas as pd
-
-# data = load("Leukemia")
-
-# train_set, test_set = split_data("Leukemia", make_csv=True)
-
-# fed_train_set = turn_data_to_fed("Leukemia")
 
 
 if __name__ == "__main__":
@@ -49,6 +44,14 @@ if __name__ == "__main__":
         help="Number of training rounds",
         type=int,
     )
+
+    parser.add_argument(
+        "--learning_manner",
+        help=" ",
+        type=str,
+        choices=["Federated", "Centralized"],
+    )
+
     # parser.add_argument(
     #     "--one_hot",
     #     type=lambda x: bool(strtobool(x)),
@@ -70,6 +73,17 @@ if __name__ == "__main__":
     # example_dataset = make_example_dataset(name)
 
     state = transfer_learning(name, base_model, fed_alg, client_data, num_rounds)
+    learning_manner = args.learning_manner
+
+    train, test = load(name)
+
+    print("-------- preprocessing --------")
+
+    fed_train_set, client_data = turn_data_to_fed(name, train)
+
+    print("-------- transfer learning --------")
+
+    state = transfer_learning(name, base_model, fed_alg, client_data, learning_manner)
 
     # new_state = fine_tuning(name, base_model, example_dataset, state, client_data)
 

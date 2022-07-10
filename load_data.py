@@ -17,12 +17,13 @@ def load(name):
         test_data = pd.read_csv("AML_test.csv")
     elif name == "Covid":
         print("C")
+
+        train_data = pd.read_csv('covid_without_normal_train.csv')
+        test_data = pd.read_csv('covid_without_normal_test.csv')
         # file_path = path('covid')
     # return file_path
     # eturn file_path
-
-    print("-------- loaded datasets --------")
-
+    print('-------- loaded data --------')
     return train_data, test_data
 
 
