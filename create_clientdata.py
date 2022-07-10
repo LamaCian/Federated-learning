@@ -4,7 +4,16 @@ import pandas as pd
 import os
 
 
-def create_clientdata(client_ids, train_set, labels, base_model):
+def create_clientdata(
+    client_ids, dataset_name, train_set, test_set, labels, base_model
+):
+
+    if dataset_name == "Leukemia":
+        img_size = 224
+
+    elif dataset_name == "Covid":
+        img_size = 96
+
     labels_tf = tf.convert_to_tensor(labels)
 
     def parse_image(filename):
@@ -16,7 +25,7 @@ def create_clientdata(client_ids, train_set, labels, base_model):
         image = tf.io.read_file(filename)
         image = tf.io.decode_jpeg(image, channels=3)
         image = tf.image.convert_image_dtype(image, tf.float32)
-        image = tf.image.resize(image, [32, 32])
+        image = tf.image.resize(image, [img_size, img_size])
         image = tf.keras.applications.resnet50.preprocess_input(image)
         #
 
@@ -62,8 +71,11 @@ def create_clientdata(client_ids, train_set, labels, base_model):
 
         return images_ds
 
-    client_data = tff.simulation.datasets.ClientData.from_clients_and_tf_fn(
+    client_data_train = tff.simulation.datasets.ClientData.from_clients_and_tf_fn(
         client_ids, create_dataset
     )
 
-    return client_data
+    client_data_test = tff.simulation.datasets.ClientData.from_clients_and_tf_fn(
+        client_ids, create_dataset
+    )
+    return client_data_train, client_data_test

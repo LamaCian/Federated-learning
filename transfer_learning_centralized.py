@@ -1,7 +1,3 @@
-from decimal import ROUND_FLOOR
-import random
-from numpy import Inf
-from requests import head
 import tensorflow as tf
 import tensorflow_federated as tff
 

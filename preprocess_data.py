@@ -6,7 +6,7 @@ from create_clientdata import create_clientdata
 from make_fed_data import make_federated_data
 
 
-def turn_data_to_fed(dataset_name, train_set, base_model):
+def turn_data_to_fed(dataset_name, train_set, test_set, base_model):
 
     print("-------- starts preprocessing --------")
 
@@ -61,15 +61,19 @@ def turn_data_to_fed(dataset_name, train_set, base_model):
             "18",
         ]
 
-    print("-------- creating ClientData Object --------")
+    print("\n-------- creating ClientData Object --------")
 
-    client_data = create_clientdata(client_ids, train_set, labels, base_model)
-    print("Structure of client data: ", client_data.element_type_structure)
+    client_data_train, client_data_test = create_clientdata(
+        client_ids, dataset_name, train_set, test_set, labels, base_model
+    )
+    print("\nStructure of client data train: ", client_data_train.element_type_structure)
 
-    print("-------- turn data into fed data --------")
-    fed_data = make_federated_data(client_data, client_ids)
-
-    print("-------- data is preprocessed --------")
+    print("\nStructure of client data train: ", client_data_test.element_type_structure)
 
 
-    return fed_data, client_data
+    print("\n-------- turn data into fed data --------")
+    fed_data_test = make_federated_data(client_data_test, client_ids)
+
+    print("\n-------- data is preprocessed --------")
+
+    return fed_data_test, client_data_train

@@ -1,3 +1,4 @@
+from doctest import testmod
 from email.mime import base
 import tensorflow_federated as tff
 import tensorflow
@@ -8,7 +9,7 @@ from split_data import *
 import argparse
 from pathlib import Path
 from example_dataset import make_example_dataset
-from transfer_learning import transfer_learning
+from transfer_learning2 import transfer_learning2
 from distutils.util import strtobool
 
 # from fine_tuning import fine_tuning
@@ -65,31 +66,16 @@ if __name__ == "__main__":
     base_model = args.base_model
     fed_alg = args.fed_alg
     num_rounds = args.num_rounds
-
-    train, test = load(name)
-
-    fed_train_set, client_data = turn_data_to_fed(name, train, base_model)
-
-    # example_dataset = make_example_dataset(name)
-
-    state = transfer_learning(name, base_model, fed_alg, client_data, num_rounds)
     learning_manner = args.learning_manner
 
     train, test = load(name)
 
-    print("-------- preprocessing --------")
+    print("\n-------- preprocessing --------")
 
-    fed_train_set, client_data = turn_data_to_fed(name, train)
+    fed_test, client_data_train = turn_data_to_fed(name, train, test, base_model)
 
-    print("-------- transfer learning --------")
+    print("\n-------- transfer learning --------")
 
-    state = transfer_learning(name, base_model, fed_alg, client_data, learning_manner)
+    state = transfer_learning2(name, base_model, fed_alg, client_data_train, fed_test, num_rounds, learning_manner)
 
     # new_state = fine_tuning(name, base_model, example_dataset, state, client_data)
-
-
-# print metrics
-# more number or round
-# look at metrics
-# then fine tuning
-# number of rounds as argparse

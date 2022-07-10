@@ -11,19 +11,19 @@ def load(name):
     """
 
     if name == "Leukemia":
-        print("L")
+        print("Leukemia")
         # file_path = path('leukemia')
         train_data = pd.read_csv("AML_train_dirichlet.csv")
         test_data = pd.read_csv("AML_test.csv")
     elif name == "Covid":
-        print("C")
+        print("Covid")
 
-        train_data = pd.read_csv('covid_without_normal_train.csv')
-        test_data = pd.read_csv('covid_without_normal_test.csv')
+        train_data = pd.read_csv("covid_without_normal_train.csv")
+        test_data = pd.read_csv("covid_without_normal_test.csv")
         # file_path = path('covid')
     # return file_path
     # eturn file_path
-    print('-------- loaded data --------')
+    print("-------- loaded data --------")
     return train_data, test_data
 
 
