@@ -4,9 +4,7 @@ from numpy import Inf
 from requests import head
 import tensorflow as tf
 import tensorflow_federated as tff
-import keras
-from keras.models import Sequential
-from keras.layers import Dense, Conv2D, MaxPool2D, Flatten, Dropout, BatchNormalization
+
 from make_fed_data import make_federated_data
 import pandas as pd
 import time
@@ -17,7 +15,6 @@ import csv
 from preprocess_func import preprocess
 from preprocess_centralized import preprocess_centralized
 from transfer_learning_centralized import transfer_learning_centralized
-import transfer_learning_centralized
 
 
 def date_to_str(date):
@@ -28,7 +25,7 @@ def date_to_str(date):
 
 
 def transfer_learning2(
-    name, base_model, fed_alg, client_data, test, num_rounds, learning_manner
+    name, base_model, fed_alg, client_data, fed_data_test, num_rounds, learning_manner
 ):
 
     input_spec = preprocess(
@@ -247,7 +244,7 @@ def transfer_learning2(
     best_accuracy = 0
 
     federated_test = tff.learning.build_federated_evaluation(create_FL_model)
-    fed_data_test = preprocess(test.create_tf_dataset_for_client(test.client_ids[0]))
+    # fed_data_test = preprocess(test.create_tf_dataset_for_client(test.client_ids[0]))
 
     client_data_train, client_data_valid = client_data.train_test_client_split(
         client_data, num_test_clients=1, seed=12345
