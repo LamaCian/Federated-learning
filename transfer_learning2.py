@@ -392,6 +392,7 @@ def transfer_learning2(
                 "eval_sparse_categorical_accuracy": eval_sparse_categorical_accuracy,
                 "eval_loss": eval_loss,
                 "valid_ids": list_valid_ids,
+                "train_time": train_time,
             }
         )
 
@@ -425,5 +426,19 @@ def transfer_learning2(
         fed_data_test, steps=2, verbose=0
     )
     print("loss_test: ", loss_test, "accuracy_test: ", accuracy_test)
+
+    # title = "test"
+
+    # (subfolder_path / f"{title}.txt").write_text(str([]))
+
+    test_info = pd.DataFrame(
+        {
+            "loss": test_results["eval"]["loss"],
+            "accuracy": test_results["eval"]["sparse_categorical_accuracy"],
+            "dataset": name,
+            "model": base_model,
+            "fed_alg": fed_alg,
+        }
+    )
 
     return state
