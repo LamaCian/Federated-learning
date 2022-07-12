@@ -3,23 +3,22 @@ import tensorflow as tf
 import tensorflow_federated as tff
 import os
 import matplotlib.image as mpimg
-from keras.models import Sequential
-from keras.layers import Dense, Conv2D, MaxPool2D, Flatten, Dropout, BatchNormalization
+
 
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import metrics
 
 
-df_train = pd.read_csv("covid_without_normal_train.csv")
+df_train = pd.read_csv("AML_train_dirichlet.csv")
 # df_train = pd.read_csv("covid_without_normal_train.csv")
 # df_test =
 
-test_data = pd.read_csv("covid_without_normal_test.csv")
+test_data = pd.read_csv("AML_test.csv")
 
-validation = df_train[df_train["client_id"] == 14]
+validation = df_train[df_train["client_id"] == 2]
 
-train_data = df_train.drop(df_train[df_train.client_id == 14].index)
+train_data = df_train.drop(df_train[df_train.client_id == 2].index)
 
 # x_train = train_data["path"]
 y_train = train_data["label"]
@@ -31,24 +30,24 @@ y_train = train_data["label"]
 number_of_classes = len(np.unique(y_train))
 print(number_of_classes)
 
-# labels = [
-#     "KSC",
-#     "MYO",
-#     "NGB",
-#     "MON",
-#     "PMO",
-#     "MMZ",
-#     "EBO",
-#     "MYB",
-#     "NGS",
-#     "BAS",
-#     "MOB",
-#     "LYA",
-#     "LYT",
-#     "EOS",
-#     "PMB",
-# ]
-labels = ["COVID", "LUNG_OPACITY", "PNEUMONIA"]
+labels = [
+    "KSC",
+    "MYO",
+    "NGB",
+    "MON",
+    "PMO",
+    "MMZ",
+    "EBO",
+    "MYB",
+    "NGS",
+    "BAS",
+    "MOB",
+    "LYA",
+    "LYT",
+    "EOS",
+    "PMB",
+]
+# labels = ["COVID", "LUNG_OPACITY", "PNEUMONIA"]
 
 # ENCODING
 # labelencoder = LabelEncoder()
@@ -80,9 +79,9 @@ def parse_function(filename, label):
 
     # This will convert to float values in [0, 1]
     # image = tf.image.convert_image_dtype(image, tf.float32)
-    image = tf.image.resize(image, [96, 96])
+    image = tf.image.resize(image, [224, 224])
 
-    image = tf.keras.applications.resnet50.preprocess_input(image)
+    image = tf.keras.applications.vgg16.preprocess_input(image)
 
     return image, label_int
 
@@ -124,9 +123,9 @@ dataset = dataset.prefetch(1)
 print(dataset)
 # data = tff.simulation.datasets.TestClientData(train_data)
 
-input_shape = 96
+input_shape = 224
 
-base_model = tf.keras.applications.resnet.ResNet50(
+base_model = tf.keras.applications.vgg16.VGG16(
     include_top=False,
     weights="imagenet",
     input_tensor=tf.keras.layers.Input(shape=(input_shape, input_shape, 3)),
