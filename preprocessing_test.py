@@ -47,13 +47,13 @@ def parse_image(filename):
 
 def create_dataset(client_id):
 
-    """create_dataset _summary_
+    """create_dataset :A function that takes a client_id from the above list and constructs a ClientData based on the given function.
 
     Args:
-        client_id (_type_): _description_
+        client_id (string): A non-empty list of strings to use as input to create_dataset_fn.
 
     Returns:
-        _type_: _description_
+      tf.data.Dataset  : Dataset of images
     """
     df = pd.read_csv("AML_train_dirichlet.csv", encoding="utf-8")
 
