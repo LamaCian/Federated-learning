@@ -15,8 +15,8 @@ def load_model(name, base_model):
 
     Args:
         base_model (keras.model): pre-trained model
-        input_shape (_type_): _description_
-        num_classes (_type_): _description_
+        input_shape (int): shape of data(images)
+        num_classes (int): number of classes 
 
     Returns:
         keras.model: Pre-trained model ready for transfer learning
