@@ -5,14 +5,14 @@ import csv
 
 def generate_csv(folder_path, train_data, test_data, train_img_paths_list, batch_idxs):
 
-    """generate_csv _summary_
+    """generate_csv Generate a csv file containing information about image paths and given batch index
 
     Args:
-        folder_path (Path): _description_
-        train_data (_type_): _description_
-        test_data (_type_): _description_
-        train_img_paths_list (_type_): _description_
-        batch_idxs (_type_): _description_
+        folder_path (Path): Path of images
+        train_data (array): Data used for training
+        test_data (array):  Data used for testing
+        train_img_paths_list (list): List of train paths
+        batch_idxs (int): Batch index
     """
 
     if folder_path == "Leukemia":
